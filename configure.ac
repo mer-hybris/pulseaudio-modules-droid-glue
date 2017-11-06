@@ -195,6 +195,21 @@ AC_ARG_WITH([module-dir],
 
 AC_SUBST(modlibexecdir)
 
+audioflingergluename="libaudioflingerglue.so"
+AC_ARG_WITH([audioflingerglue-name],
+        AS_HELP_STRING([--with-audioflingerglue-name], [Audioglingerglue library name (default libaudioflingerglue.so)]),
+        [afname=$withval], [afname=$audioflingergluename]
+        )
+LIB_AF_CFLAGS="-DLIB_AF_NAME=\"\\\"${afname}\\\"\""
+
+audioflingergluebase="/usr/libexec/droid-hybris/system"
+AC_ARG_WITH([audioflingerglue-base],
+        AS_HELP_STRING([--with-audioflingerglue-base], [Audioglingerglue library base path (default /usr/libexec/droid-hybris/system)]),
+        [afpath=$withval], [afpath=$audioflingergluebase]
+        )
+LIB_AF_CFLAGS+=" -DLIB_AF_BASE_PATH=\"\\\"${afpath}\\\"\""
+AC_SUBST([LIB_AF_CFLAGS])
+
 ############################################
 # Droid device type
 droiddevice="generic"
@@ -237,6 +252,9 @@ echo "
     prefix:                 ${prefix}
     PulseAudio prefix:      ${pulseaudiodir}
     modules directory:      ${modlibexecdir}
+
+    Audioflingerglue name:  ${afname}
+        library base path:  ${afpath}
 
     Droid device            ${droiddevice}
     "
