@@ -25,6 +25,7 @@
 
 #include <signal.h>
 #include <stdio.h>
+#include <dlfcn.h>
 
 #ifdef HAVE_VALGRIND_MEMCHECK_H
 #include <valgrind/memcheck.h>
@@ -45,6 +46,7 @@
 
 #include "module-droid-glue-symdef.h"
 
+#include <hybris/common/binding.h>
 #include <audioflingerglue.h>
 
 PA_MODULE_AUTHOR("Juho Hämäläinen");
@@ -52,14 +54,27 @@ PA_MODULE_DESCRIPTION("Droid AudioFlinger Glue");
 PA_MODULE_VERSION(PACKAGE_VERSION);
 PA_MODULE_USAGE(
         "module_id=<which droid hw module to load, default primary> "
+        "lib=<absolute path to audioflingerglue library. if not defined try to autodetect>"
 );
 
 static const char* const valid_modargs[] = {
     "module_id",
+    "lib",
     NULL,
 };
 
+#define AF_LIB32 LIB_AF_BASE_PATH "/lib/" LIB_AF_NAME
+#define AF_LIB64 LIB_AF_BASE_PATH "/lib64/" LIB_AF_NAME
+
+static const char* const lib_paths[] = {
+    AF_LIB32,
+    AF_LIB64,
+    NULL
+};
+
 #define DEFAULT_MODULE_ID "primary"
+
+static void *audioflingerglue_handle;
 
 struct userdata {
     pa_core *core;
@@ -96,20 +111,63 @@ static int get_parameters_cb(const char *keys, char **reply, void *userdata) {
     *reply = u->hw_module->device->get_parameters(u->hw_module->device, keys);
     pa_droid_hw_module_unlock(u->hw_module);
 
-    pa_log_debug("Glue get_parameters(\"%s\"): \"%s\"", keys, *reply ?: "<null>");
+    pa_log_debug("Glue get_parameters(\"%s\"): \"%s\"", keys, *reply ? *reply : "<null>");
 
     return *reply ? 0 : 1;
+}
+
+static bool audioflingerglue_initialize(const char *path) {
+    if ((audioflingerglue_handle = android_dlopen(path, RTLD_LAZY)))
+        return true;
+
+    return false;
+}
+
+static bool file_exists(const char *path) {
+    return access(path, F_OK) == 0 ? true : false;
+}
+
+static const char *detect_lib_path(void) {
+    int i;
+
+    for (i = 0; lib_paths[i]; i++) {
+        bool found = file_exists(lib_paths[i]);
+        pa_log_debug("look for %s...%s", lib_paths[i], found ? "found" : "no");
+        if (found)
+            return lib_paths[i];
+    }
+
+    return NULL;
 }
 
 int pa__init(pa_module *m) {
     pa_modargs *ma = NULL;
     const char *module_id;
+    const char *lib_path;
     DroidAfGlueCallbacks cb;
 
     pa_assert(m);
 
     if (!(ma = pa_modargs_new(m->argument, valid_modargs))) {
         pa_log("Failed to parse module arguments.");
+        goto fail;
+    }
+
+    if ((lib_path = pa_modargs_get_value(ma, "lib", NULL))) {
+        if (!file_exists(lib_path)) {
+            pa_log("Audioflingerglue library with path '%s' not found.", lib_path);
+            goto fail;
+        }
+    } else
+        lib_path = detect_lib_path();
+
+    if (!lib_path) {
+        pa_log("Could not find audioflingerglue library.");
+        goto fail;
+    }
+
+    if (!audioflingerglue_initialize(lib_path)) {
+        pa_log("Could not load audioflingerglue library.");
         goto fail;
     }
 
