@@ -8,7 +8,7 @@ Summary:    PulseAudio Droid HAL glue module
 Version:    %{pulsemajorminor}.4
 Release:    1
 Group:      Multimedia/PulseAudio
-License:    LGPLv2.1+
+License:    LGPLv2+
 URL:        https://github.com/mer-hybris/pulseaudio-modules-droid-glue
 Source0:    %{name}-%{version}.tar.bz2
 Requires:   pulseaudio >= %{pulseversion}
@@ -43,3 +43,4 @@ rm -rf %{buildroot}
 %files
 %defattr(-,root,root,-)
 %{_libdir}/pulse-%{pulsemajorminor}/modules/*.so
+%license COPYING
