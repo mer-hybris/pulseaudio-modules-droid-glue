@@ -7,7 +7,6 @@ Name:       pulseaudio-modules-droid-glue
 Summary:    PulseAudio Droid HAL glue module
 Version:    %{pulsemajorminor}.5
 Release:    1
-Group:      Multimedia/PulseAudio
 License:    LGPLv2+
 URL:        https://github.com/mer-hybris/pulseaudio-modules-droid-glue
 Source0:    %{name}-%{version}.tar.bz2
@@ -27,14 +26,18 @@ PulseAudio Droid HAL glue module.
 
 
 %prep
-%setup -q -n %{name}-%{version}
+%autosetup -n %{name}-%{version}
 
 %build
 echo "%{moduleversion}" > .tarball-version
 # Obtain the DEVICE from the same source as used in /etc/os-release
-. /usr/lib/droid-devel/hw-release.vars
+if [ -e "%{_includedir}/droid-devel/hw-release.vars" ]; then
+. %{_includedir}/droid-devel/hw-release.vars
+else
+. %{_libdir}/droid-devel/hw-release.vars
+fi
 %reconfigure --disable-static --with-droid-device=$MER_HA_DEVICE
-make %{?jobs:-j%jobs}
+%make_build
 
 %install
 rm -rf %{buildroot}
