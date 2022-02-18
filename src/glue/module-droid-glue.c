@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Jolla Ltd.
+ * Copyright (C) 2015-2022 Jolla Ltd.
  *
  * Contact: Juho Hämäläinen <juho.hamalainen@jolla.com>
  *
@@ -42,8 +42,6 @@
 #include <pulsecore/log.h>
 #include <pulsecore/macro.h>
 
-#include <droid/droid-util.h>
-
 #include "module-droid-glue-symdef.h"
 
 #include <hybris/common/binding.h>
@@ -53,7 +51,7 @@ PA_MODULE_AUTHOR("Juho Hämäläinen");
 PA_MODULE_DESCRIPTION("Droid AudioFlinger Glue");
 PA_MODULE_VERSION(PACKAGE_VERSION);
 PA_MODULE_USAGE(
-        "module_id=<which droid hw module to load, default primary> "
+        "module_id=<unused> "
         "lib=<absolute path to audioflingerglue library. if not defined try to autodetect>"
 );
 
@@ -72,7 +70,9 @@ static const char* const lib_paths[] = {
     NULL
 };
 
-#define DEFAULT_MODULE_ID "primary"
+#define DROID_HW_HANDLE         "droid.handle.v1"
+#define DROID_SET_PARAMETERS    "droid.set_parameters.v1"
+#define DROID_GET_PARAMETERS    "droid.get_parameters.v1"
 
 static void *audioflingerglue_handle;
 
@@ -80,8 +80,10 @@ struct userdata {
     pa_core *core;
     pa_module *module;
 
-    pa_droid_hw_module *hw_module;
     DroidAfGlue *glue;
+    void   *hw_handle;
+    int   (*set_parameters)(void *handle, const char *key_value_pairs);
+    char* (*get_parameters)(void *handle, const char *keys);
 };
 
 static int set_parameters_cb(const char *key_value_pairs, void *userdata) {
@@ -92,9 +94,7 @@ static int set_parameters_cb(const char *key_value_pairs, void *userdata) {
 
     pa_log_debug("Glue set_parameters(\"%s\")", key_value_pairs);
 
-    pa_droid_hw_module_lock(u->hw_module);
-    ret = u->hw_module->device->set_parameters(u->hw_module->device, key_value_pairs);
-    pa_droid_hw_module_unlock(u->hw_module);
+    ret = u->set_parameters(u->hw_handle, key_value_pairs);
 
     if (ret != 0)
         pa_log_warn("Glue set_parameters(\"%s\") failed: %d", key_value_pairs, ret);
@@ -107,9 +107,7 @@ static int get_parameters_cb(const char *keys, char **reply, void *userdata) {
 
     pa_assert_se((u = userdata));
 
-    pa_droid_hw_module_lock(u->hw_module);
-    *reply = u->hw_module->device->get_parameters(u->hw_module->device, keys);
-    pa_droid_hw_module_unlock(u->hw_module);
+    *reply = u->get_parameters(u->hw_handle, keys);
 
     pa_log_debug("Glue get_parameters(\"%s\"): \"%s\"", keys, *reply ? *reply : "<null>");
 
@@ -142,7 +140,6 @@ static const char *detect_lib_path(void) {
 
 int pa__init(pa_module *m) {
     pa_modargs *ma = NULL;
-    const char *module_id;
     const char *lib_path;
     DroidAfGlueCallbacks cb;
 
@@ -175,10 +172,10 @@ int pa__init(pa_module *m) {
     u->core = m->core;
     m->userdata = u;
 
-    module_id = pa_modargs_get_value(ma, "module_id", DEFAULT_MODULE_ID);
-
-    if (!(u->hw_module = pa_droid_hw_module_get(u->core, NULL, module_id))) {
-        pa_log("Couldn't get hw module %s, is module-droid-card loaded?", module_id);
+    if (!(u->hw_handle = pa_shared_get(u->core, DROID_HW_HANDLE)) ||
+        !(u->set_parameters = pa_shared_get(u->core, DROID_SET_PARAMETERS)) ||
+        !(u->get_parameters = pa_shared_get(u->core, DROID_GET_PARAMETERS))) {
+        pa_log("Couldn't get hw module functions, is module-droid-card loaded?");
         goto fail;
     }
 
@@ -212,9 +209,6 @@ void pa__done(pa_module *m) {
 
         if (u->glue)
             droid_afglue_disconnect(u->glue);
-
-        if (u->hw_module)
-            pa_droid_hw_module_unref(u->hw_module);
 
         pa_xfree(u);
     }
