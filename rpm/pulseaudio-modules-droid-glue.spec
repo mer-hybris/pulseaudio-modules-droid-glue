@@ -5,7 +5,7 @@
 Name:       pulseaudio-modules-droid-glue
 
 Summary:    PulseAudio Droid HAL glue module
-Version:    %{pulsemajorminor}.5
+Version:    %{pulsemajorminor}.7
 Release:    1
 License:    LGPLv2+
 URL:        https://github.com/mer-hybris/pulseaudio-modules-droid-glue
