@@ -12,6 +12,7 @@ URL:        https://github.com/mer-hybris/pulseaudio-modules-droid-glue
 Source0:    %{name}-%{version}.tar.bz2
 Requires:   pulseaudio >= %{pulseversion}
 Requires:   audioflingerglue >= 0.0.1
+Requires:   pulseaudio-modules-droid
 BuildRequires:  automake
 BuildRequires:  libtool
 BuildRequires:  libtool-ltdl-devel
@@ -19,7 +20,6 @@ BuildRequires:  audioflingerglue-devel >= 0.0.1
 BuildRequires:  pkgconfig(pulsecore) >= %{pulsemajorminor}
 BuildRequires:  pkgconfig(android-headers)
 BuildRequires:  pkgconfig(libhardware)
-BuildRequires:  pkgconfig(libdroid-util) >= %{pulsemajorminor}.41
 
 %description
 PulseAudio Droid HAL glue module.
