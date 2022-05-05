@@ -41,8 +41,7 @@
 #include <pulsecore/modargs.h>
 #include <pulsecore/log.h>
 #include <pulsecore/macro.h>
-
-#include "module-droid-glue-symdef.h"
+#include <pulsecore/shared.h>
 
 #include <hybris/common/binding.h>
 #include <audioflingerglue.h>
