@@ -1,0 +1,21 @@
+option('atomic-arm-linux-helpers',
+       type : 'boolean', value : true,
+       description : 'Use inline asm or libatomic_ops instead')
+option('atomic-arm-memory-barrier',
+       type : 'boolean', value : false,
+       description : 'Enable memory barriers (only really needed in SMP arm systems)')
+option('audioflingerglue-base',
+       type : 'string',
+       value : '/usr/libexec/droid-hybris/system',
+       description : 'Audioglingerglue library base path (default /usr/libexec/droid-hybris/system)')
+option('audioflingerglue-name',
+       type : 'string',
+       value : 'libaudioflingerglue.so',
+       description : 'Audioglingerglue library name (default libaudioflingerglue.so)')
+option('droid-device',
+       type : 'string',
+       value : 'generic',
+       description : 'Droid device type for possible specific quirks (defaults to generic).')
+option('modlibexecdir',
+       type : 'string',
+       description : 'Specify location where modules will be installed')
