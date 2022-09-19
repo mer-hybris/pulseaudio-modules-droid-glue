@@ -13,9 +13,8 @@ Source0:    %{name}-%{version}.tar.bz2
 Requires:   pulseaudio >= %{pulseversion}
 Requires:   audioflingerglue >= 0.0.1
 Requires:   pulseaudio-modules-droid
-BuildRequires:  automake
-BuildRequires:  libtool
 BuildRequires:  libtool-ltdl-devel
+BuildRequires:  meson
 BuildRequires:  audioflingerglue-devel >= 0.0.1
 BuildRequires:  pkgconfig(pulsecore) >= %{pulsemajorminor}
 BuildRequires:  pkgconfig(android-headers)
@@ -36,12 +35,12 @@ if [ -e "%{_includedir}/droid-devel/hw-release.vars" ]; then
 else
 . %{_libdir}/droid-devel/hw-release.vars
 fi
-%reconfigure --disable-static --with-droid-device=$MER_HA_DEVICE
-%make_build
+
+%meson -Ddroid-device=$MER_HA_DEVICE
+%meson_build
 
 %install
-rm -rf %{buildroot}
-%make_install
+%meson_install
 
 %files
 %defattr(-,root,root,-)
