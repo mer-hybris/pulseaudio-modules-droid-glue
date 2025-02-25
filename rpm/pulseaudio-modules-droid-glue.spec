@@ -43,6 +43,5 @@ fi
 %meson_install
 
 %files
-%defattr(-,root,root,-)
-%{_libdir}/pulse-%{pulsemajorminor}/modules/*.so
+%{_libdir}/pulse-*/modules/*.so
 %license COPYING
